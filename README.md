@@ -1,5 +1,7 @@
 # GameOfLife
 
+[![Build Status](https://travis-ci.org/clockvoid/GameOfLife.svg?branch=master)](https://travis-ci.org/clockvoid/GameOfLife)
+
 ## Description
 おうすうけん，fp班の文化祭の出し物で使おうと思っている（予定），ライフゲームのHaskell実装です．
 
