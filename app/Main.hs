@@ -5,6 +5,6 @@ import Graphics.Gloss
 import Data.List
 
 main :: IO ()
-main = display (createWindow "Game of Life") white $ render initialState
+main = simulate (createWindow "Game of Life") white 1 initialState render (\v n f -> f ++ [replicate size red])
 
-initialState = replicate 20 (replicate 20 red)
+initialState = [replicate size red]
