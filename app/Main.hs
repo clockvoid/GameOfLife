@@ -4,7 +4,30 @@ import View
 import Graphics.Gloss
 import Data.List
 
-main :: IO ()
-main = simulate (createWindow "Game of Life") white 1 initialState render (\v n f -> f ++ [replicate size red])
+fps :: Int
+fps = 1
 
-initialState = [replicate size red]
+size :: Int
+size = 40
+
+main :: IO ()
+main = run size fps initialState next cellStateToColor
+
+-- 状態の型
+type CellState = Bool
+
+-- 初期状態
+initialState :: [[CellState]]
+initialState = (replicate size . replicate size) False
+
+-- 遷移関数
+next :: [[CellState]] -> [[CellState]]
+next prevField = nextField
+  where
+    nextField = (map . map) not prevField
+
+-- 色付けのルール
+cellStateToColor :: CellState -> Color
+cellStateToColor model = c
+  where
+    c = if model then red else white

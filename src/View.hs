@@ -1,53 +1,55 @@
 module View (
-    cell
-    , backGround
-    , fieldWidth
-    , troutNumber
-    , render
-    , size
-    , createWindow
+  run
 ) where
 
 import Graphics.Gloss
 
 type Field = [[Color]]
 
-fieldWidth :: Float
-fieldWidth = 400
+cellSize :: Float
+cellSize = 10
 
-troutNumber :: Float
-troutNumber = 40
+bgColor :: Color
+bgColor = white
 
-size :: Int
-size = truncate troutNumber
+windowName :: String
+windowName = "Cell Automaton"
 
-triangles :: Float -> Float -> [Path]
-triangles x' y' = [[(x, y), (x + fieldWidth / troutNumber, y), (x, y - fieldWidth / troutNumber)], [(x + fieldWidth / troutNumber, y), (x, y - fieldWidth / troutNumber), (x + fieldWidth / troutNumber, y - fieldWidth / troutNumber)]]
+run :: Int -> Int -> [[a]] -> ([[a]] -> [[a]]) -> (a -> Color) -> IO ()
+run size fps initialState next stateToColor = simulate window bgColor fps initialState renderState $ const . const next
+  where
+    s = (fromInteger . toInteger) size
+    window = createWindow s windowName
+    renderState = (render s) . (map . map) stateToColor
+
+
+triangles :: Float -> Float -> Float -> [Path]
+triangles s x' y' = [[(x, y), (x + (cellSize * s) / s, y), (x, y - (cellSize * s) / s)], [(x + (cellSize * s) / s, y), (x, y - (cellSize * s) / s), (x + (cellSize * s) / s, y - (cellSize * s) / s)]]
     where
-        x = x' * fieldWidth / troutNumber - fieldWidth / 2
-        y = -1 * y' * fieldWidth / troutNumber + fieldWidth / 2
+        x = x' * (cellSize * s) / s - (cellSize * s) / 2
+        y = -1 * y' * (cellSize * s) / s + (cellSize * s) / 2
 
-cell :: (Float, Float, Color) -> Picture
-cell (x, y, c) = color c (pictures (map polygon (triangles x y)))
+cell :: Float -> (Float, Float, Color) -> Picture
+cell s (x, y, c) = color c (pictures (map polygon (triangles s x y)))
 
-coordinate :: Field -> [(Float, Float, Color)]
-coordinate field = concat $ map (\(x, cs) -> [(x, fst y, snd y) | y <- zip [0..troutNumber - 1] cs]) $ zip [0..troutNumber - 1] field
+coordinate :: Float -> Field -> [(Float, Float, Color)]
+coordinate s field = concat $ map (\(x, cs) -> [(x, fst y, snd y) | y <- zip [0..s - 1] cs]) $ zip [0..s - 1] field
 
-render :: Field -> Picture
-render field = pictures (map cell (coordinate field) ++ [backGround])
+render :: Float -> Field -> Picture
+render s field = pictures (map (cell s) (coordinate s field) ++ [backGround s])
 
-makeVerticalLines :: Float -> [Picture]
-makeVerticalLines x = if x <= fieldWidth / 2
-    then [line [(x, fieldWidth / 2), (x, -1 * fieldWidth / 2)]] ++ makeVerticalLines (x + fieldWidth / troutNumber)
+makeVerticalLines :: Float -> Float -> [Picture]
+makeVerticalLines s x = if x <= (cellSize * s) / 2
+    then [line [(x, (cellSize * s) / 2), (x, -1 * (cellSize * s) / 2)]] ++ makeVerticalLines s (x + (cellSize * s) / s)
     else []
 
-makeHorizontalLines :: Float -> [Picture]
-makeHorizontalLines y = if y <= fieldWidth / 2
-    then [line [(fieldWidth / 2, y), (-1 * fieldWidth / 2, y)]] ++ makeHorizontalLines (y + fieldWidth / troutNumber)
+makeHorizontalLines :: Float -> Float -> [Picture]
+makeHorizontalLines s y = if y <= (cellSize * s) / 2
+    then [line [((cellSize * s) / 2, y), (-1 * (cellSize * s) / 2, y)]] ++ makeHorizontalLines s (y + (cellSize * s) / s)
     else []
 
-backGround :: Picture
-backGround = pictures $ makeVerticalLines (-1 * fieldWidth / 2) ++ makeHorizontalLines (-1 * fieldWidth / 2)
+backGround :: Float -> Picture
+backGround s = pictures $ makeVerticalLines s (-1 * (cellSize * s) / 2) ++ makeHorizontalLines s (-1 * (cellSize * s) / 2)
 
-createWindow :: String -> Display
-createWindow windowName = InWindow windowName (round fieldWidth + 50, round fieldWidth + 50) (10, 10)
+createWindow :: Float -> String -> Display
+createWindow s windowName = InWindow windowName (round (cellSize * s) + 50, round (cellSize * s) + 50) (10, 10)
