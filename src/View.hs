@@ -17,6 +17,9 @@ fieldWidth = 400
 troutNumber :: Float
 troutNumber = 40
 
+size :: Int
+size = truncate troutNumber
+
 triangles :: Float -> Float -> [Path]
 triangles x' y' = [[(x, y), (x + fieldWidth / troutNumber, y), (x, y - fieldWidth / troutNumber)], [(x + fieldWidth / troutNumber, y), (x, y - fieldWidth / troutNumber), (x + fieldWidth / troutNumber, y - fieldWidth / troutNumber)]]
     where
