@@ -5,4 +5,6 @@ import Graphics.Gloss
 import Data.List
 
 main :: IO ()
-main = display (InWindow "Game of Life" (round fieldWidth + 50, round fieldWidth + 50) (10, 10)) white $ render (replicate 20 (replicate 20 red))
+main = display (createWindow "Game of Life") white $ render initialState
+
+initialState = replicate 20 (replicate 20 red)

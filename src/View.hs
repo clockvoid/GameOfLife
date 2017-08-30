@@ -4,6 +4,7 @@ module View (
     , fieldWidth
     , troutNumber
     , render
+    , createWindow
 ) where
 
 import Graphics.Gloss
@@ -44,3 +45,5 @@ makeHorizontalLines y = if y <= fieldWidth / 2
 backGround :: Picture
 backGround = pictures $ makeVerticalLines (-1 * fieldWidth / 2) ++ makeHorizontalLines (-1 * fieldWidth / 2)
 
+createWindow :: String -> Display
+createWindow windowName = InWindow windowName (round fieldWidth + 50, round fieldWidth + 50) (10, 10)
