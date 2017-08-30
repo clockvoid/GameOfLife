@@ -4,6 +4,7 @@ module View (
     , fieldWidth
     , troutNumber
     , render
+    , size
     , createWindow
 ) where
 
