@@ -5,4 +5,4 @@ import Graphics.Gloss
 import Data.List
 
 main :: IO ()
-main = display (InWindow "Game of Life" (round fieldWidth + 50, round fieldWidth + 50) (10, 10)) white $ render (replicate 20 (replicate 20 red))
+main = simulate (InWindow "Game of Life" (round fieldWidth + 50, round fieldWidth + 50) (10, 10)) white 1 [replicate 40 red] render (\v n f -> f ++ [replicate 40 red])
