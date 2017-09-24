@@ -2,9 +2,31 @@ module View (
   run
 ) where
 
-import Graphics.Gloss
+type Color = String
 
 type Field = [[Color]]
+
+red :: Color
+red = "\x1b[41m"
+
+black :: Color
+black = "\x1b[40m"
+
+backGround :: Color
+backGround = "\x1b[49m"
+
+consoleClear :: IO ()
+consoleClear = putStr "\e[;H\e[2J"
+
+block :: String
+block = "  "
+
+draw :: [[Color]] -> IO ()
+draw = consoleClear >> 
+
+{-
+import Graphics.Gloss
+
 
 cellSize :: Float
 cellSize = 10
@@ -53,3 +75,5 @@ backGround s = pictures $ makeVerticalLines s (-1 * (cellSize * s) / 2) ++ makeH
 
 createWindow :: Float -> String -> Display
 createWindow s windowName = InWindow windowName (round (cellSize * s) + 50, round (cellSize * s) + 50) (10, 10)
+
+-}
