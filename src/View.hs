@@ -2,6 +2,8 @@ module View (
   run
 ) where
 
+import Control.Monad
+
 type Color = String
 
 type Field = [[Color]]
@@ -15,14 +17,14 @@ black = "\x1b[40m"
 backGround :: Color
 backGround = "\x1b[49m"
 
-consoleClear :: IO ()
-consoleClear = putStr "\e[;H\e[2J"
+clearConsole:: IO ()
+clearConsole = putStr "\e[;H\e[2J"
 
 block :: String
 block = "  "
 
 draw :: [[Color]] -> IO ()
-draw = consoleClear >> 
+draw = clearConsole >>
 
 {-
 import Graphics.Gloss
