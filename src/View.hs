@@ -21,7 +21,7 @@ backGround :: Color
 backGround = "\x1b[49m  "
 
 clearConsole:: IO ()
-clearConsole = putStr "\\e[;H\\e[2J"
+clearConsole = putStr "\ESC[;H\ESC[2J"
 
 run :: Int -> Int -> [[a]] -> ([[a]] -> [[a]]) -> (a -> Color) -> IO () -- size -> fps -> initialState -> next -> stateToColor -> IO ()
 run size fps initialState next stateToColor = do
