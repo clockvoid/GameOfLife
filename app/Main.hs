@@ -17,7 +17,7 @@ type CellState = Bool
 
 -- 初期状態
 initialState :: [[CellState]]
-initialState = (replicate size . replicate size) False
+initialState = (replicate size . replicate size) True
 
 -- 遷移関数
 next :: [[CellState]] -> [[CellState]]
