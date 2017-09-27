@@ -7,6 +7,8 @@ module View (
   drow
 ) where
 
+import Control.Concurrent
+
 type Color = String
 
 type Field = [[Color]]
@@ -26,6 +28,8 @@ clearConsole = putStr "\ESC[;H\ESC[2J"
 run :: Int -> Int -> [[a]] -> ([[a]] -> [[a]]) -> (a -> Color) -> IO () -- size -> fps -> initialState -> next -> stateToColor -> IO ()
 run size fps initialState next stateToColor = do
   drow $ (map . map) stateToColor initialState
+  threadDelay $ 1000000 `quot` fps
+  run size fps (next initialState) next stateToColor
 
 drow :: Field -> IO ()
 drow field = do 
