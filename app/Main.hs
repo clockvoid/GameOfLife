@@ -1,7 +1,6 @@
 module Main where
 
 import View
-import Graphics.Gloss
 import Data.List
 
 fps :: Int
@@ -30,4 +29,4 @@ next prevField = nextField
 cellStateToColor :: CellState -> Color
 cellStateToColor model = c
   where
-    c = if model then red else white
+    c = if model then red else backGround

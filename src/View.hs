@@ -1,11 +1,10 @@
 module View (
   run, 
   red, 
-  black ,
-  backGround
+  black,
+  backGround,
+  Color
 ) where
-
-import Control.Monad
 
 type Color = String
 
@@ -26,11 +25,12 @@ clearConsole = putStr "\\e[;H\\e[2J"
 block :: String
 block = "  "
 
-run :: Int ->  [[a]] -> (a -> a) -> IO () -- fps -> initialState -> next -> IO ()
-run fps initialState next = do
+run :: Int -> Int -> [[a]] -> ([[a]] -> [[a]]) -> (a -> Color) -> IO () -- size -> fps -> initialState -> next -> stateToColor -> IO ()
+run size fps initialState next stateToColor = do
+  print "test"
 
-draw :: Field -> IO ()
-draw field = do 
+drow :: Field -> IO ()
+drow field = do 
   clearConsole
   putStr $ concat $ map (++ (backGround ++ "\n")) $ map (foldl (++) "") field 
 
