@@ -14,17 +14,25 @@ size = 50
 
 main :: IO ()
 main = do
-  rands <- replicateM (size * size) $ (getStdRandom $ randomR (0, 1) :: IO Double)
-  let initialState = aina size (map (< 0.5) rands)
+  rands <- replicateM (size * size - 2) $ (getStdRandom $ randomR (0, 1) :: IO Double)
+  let modRands = (2 : rands) ++ [-2]
+  let initialState = aina size (map modRandToState modRands)
   -- let initialState = [[ x `mod` 2 == 0 | x <- [0..size]] | y <- [0..size]]
   run size fps initialState transition cellStateToColor
+
+modRandToState :: Double -> CellState
+modRandToState x
+  | x < -1 = Slime 0
+  | x > 1 = Goal
+  | x < 0.2 = Wall
+  | otherwise = Road
 
 aina :: Int -> [a] -> [[a]]
 aina _ [] = []
 aina n a = take n a : aina n (drop n a)
 
 -- 状態の型
-type CellState = Bool
+data CellState = Goal | Road | Wall | Trace | Slime Int 
 
 -- 遷移関数
 transition :: [[CellState]] -> [[CellState]]
@@ -32,24 +40,29 @@ transition prevField = nextField
   where
     nextField = (map . map) step $ withCoord prevField
     aroundCell (x, y) = map (getCell prevField) . map (\(dx, dy) -> (x + dx, y + dy)) $ around
-    step ((x, y), s) = rule s $ foldr ((+) . boolToInt) 0 $ aroundCell (x, y)
+    step ((x, y), s) = rule s $ aroundCell (x, y)
 
 getCell :: [[CellState]] -> (Int, Int) -> CellState
 getCell field (x, y) = cell
   where
     cell =
       if x < 0 || y < 0 || x > length field - 1 || y > (length . head) field - 1 then
-        False
+        Wall
       else
         field !! y !! x
 
-rule :: Bool -> Int -> Bool
-rule s c
-  | s == True = if c == 2 || c == 3 then True else False
-  | otherwise = if c == 3 then True else False
-
-boolToInt :: Bool -> Int
-boolToInt x = if x then 1 else 0
+rule :: CellState -> [CellState] -> CellState
+rule Road s = maybe Road id $ foldr f Nothing $ filter isSlime s
+  where
+    f :: CellState -> Maybe Int -> Maybe Int
+    f (Slime i) Nothing = Just i
+    f (Slime i) (Just j)
+      | i > j = Just i
+      | otherwise = Just j
+    isSlime :: CellState -> Bool
+    isSlime Slime _ = True
+    isSlime _ = False
+rule c _ = c
 
 type WithCoord a = ((Int, Int), a)
 
@@ -62,13 +75,12 @@ delta :: [Int]
 delta = [0, -1, 1]
 
 around :: [(Int, Int)]
-around = filter notCenter $ concat $ map (\x -> map ((,) x) delta) delta
-  where
-    notCenter :: (Int, Int) -> Bool
-    notCenter (x, y) = x /= 0 || y /= 0
+around = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
 -- 色付けのルール
 cellStateToColor :: CellState -> Color
-cellStateToColor model = c
-  where
-    c = if model then black else white
+cellStateToColor Road = white
+cellStateToColor Wall = Black
+cellStateToColor Trace = yellow
+cellStateToColor Goal = red
+cellStateToColor Slime _ = green
