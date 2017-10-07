@@ -10,12 +10,13 @@ fps :: Int
 fps = 10
 
 size :: Int
-size = 40
+size = 50
 
 main :: IO ()
 main = do
   rands <- replicateM (size * size) $ (getStdRandom $ randomR (0, 1) :: IO Double)
   let initialState = aina size (map (< 0.5) rands)
+  -- let initialState = [[ x `mod` 2 == 0 | x <- [0..size]] | y <- [0..size]]
   run size fps initialState transition cellStateToColor
 
 aina :: Int -> [a] -> [[a]]
