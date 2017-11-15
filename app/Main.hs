@@ -7,10 +7,10 @@ import Graphics.Gloss
 import Data.List
 
 fps :: Int
-fps = 10
+fps = 15
 
 size :: Int
-size = 50
+size = 100
 
 main :: IO ()
 main = do
@@ -22,9 +22,9 @@ main = do
 
 modRandToState :: Double -> CellState
 modRandToState x
-  | x < -1 = Slime 0
+  | x < -1 = Start
   | x > 1 = Goal
-  | x < 0.2 = Wall
+  | x < 0.30 = Wall
   | otherwise = Road
 
 aina :: Int -> [a] -> [[a]]
@@ -32,7 +32,8 @@ aina _ [] = []
 aina n a = take n a : aina n (drop n a)
 
 -- 状態の型
-data CellState = Goal | Road | Wall | Trace | Slime Int 
+data CellState = Start | Goal | Road | Wall | Trace Direction | Slime Direction 
+data Direction = Up | Right | Down | Left deriving Enum
 
 -- 遷移関数
 transition :: [[CellState]] -> [[CellState]]
@@ -52,16 +53,20 @@ getCell field (x, y) = cell
         field !! y !! x
 
 rule :: CellState -> [CellState] -> CellState
-rule Road s = maybe Road id $ foldr f Nothing $ filter isSlime s
+rule Road s = maybe Road Slime $ foldr f Nothing (zip s [0..])
   where
-    f :: CellState -> Maybe Int -> Maybe Int
-    f (Slime i) Nothing = Just i
-    f (Slime i) (Just j)
-      | i > j = Just i
-      | otherwise = Just j
-    isSlime :: CellState -> Bool
-    isSlime Slime _ = True
-    isSlime _ = False
+    f :: (CellState, Int) -> Maybe Direction -> Maybe Direction
+    f (Start, d) _ = Just (toEnum d :: Direction)
+    f ((Slime _), d) _ = Just (toEnum d :: Direction)
+    f _ p = p
+rule (Slime i) s
+  | foldr f False (zip s [0..]) = Trace i
+  | otherwise = Slime i
+  where
+    f :: (CellState, Int) -> Bool -> Bool
+    f (Goal, d) False = mod (d + 2) 4 == fromEnum i
+    f ((Trace j), d) False = mod (d + 2) 4 == fromEnum j
+    f _ p = p
 rule c _ = c
 
 type WithCoord a = ((Int, Int), a)
@@ -75,12 +80,13 @@ delta :: [Int]
 delta = [0, -1, 1]
 
 around :: [(Int, Int)]
-around = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+around = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 
 -- 色付けのルール
 cellStateToColor :: CellState -> Color
 cellStateToColor Road = white
-cellStateToColor Wall = Black
-cellStateToColor Trace = yellow
+cellStateToColor Wall = black
+cellStateToColor (Trace _) = magenta
 cellStateToColor Goal = red
-cellStateToColor Slime _ = green
+cellStateToColor Start = blue
+cellStateToColor (Slime _) = green
