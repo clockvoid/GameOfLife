@@ -10,7 +10,7 @@ fps :: Int
 fps = 15
 
 size :: Int
-size = 100
+size = 60
 
 main :: IO ()
 main = do
