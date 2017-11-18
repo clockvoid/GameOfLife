@@ -5,7 +5,7 @@ import Graphics.Gloss
 import Data.List
 
 fps :: Int
-fps = 30
+fps = 10
 
 size :: Int
 size = 60

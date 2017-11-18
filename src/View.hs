@@ -10,7 +10,7 @@ import Data.Maybe (maybe)
 
 type Field = [[Color]]
 
-data State = State (Maybe [(Int, Int)]) [[Bool]]
+data State = State (Bool, Maybe [(Int, Int)]) [[Bool]]
 
 cellSize :: Float
 cellSize = 10
@@ -19,14 +19,14 @@ bgColor :: Color
 bgColor = white
 
 fieldToState :: [[Bool]] -> State
-fieldToState field = State Nothing field
+fieldToState field = State (False, Nothing) field
 
 windowName :: String
 windowName = "Cell Automaton"
 
 nextField :: ([[Bool]] -> [[Bool]]) -> Float -> State -> State
 nextField next num state
-  | State Nothing ss <- state
+  | State (False, Nothing) ss <- state
   , _ <- num
   , _ <- next
   = fieldToState $ next ss
@@ -35,7 +35,7 @@ nextField next num state
   = state
 
 run :: Int -> Int -> [[Bool]] -> ([[Bool]] -> [[Bool]]) -> (Bool -> Color) -> IO ()
-run size fps initialState next stateToColor = play window bgColor fps (State Nothing initialState) renderState handleEvent (nextField next)
+run size fps initialState next stateToColor = play window bgColor fps (State (False, Nothing) initialState) renderState handleEvent (nextField next)
   where
     s = (fromInteger . toInteger) size
     window = createWindow s windowName
@@ -50,10 +50,10 @@ cutArray ys xs = cutArray (drop 60 ys) ((take 60 ys):xs)
 
 pathToField :: State -> [[Bool]]
 pathToField state
-  | State (Just ps) ss <- state
+  | State (_, Just ps) ss <- state
   = cutArray (map (flip elem ps) [(x, y) | x <- [0..(60 - 1)], y <- [0..(60 - 1)]]) []
 
-  | State Nothing ss <- state
+  | State (_, Nothing) ss <- state
   = ss
 
 convertX :: Float -> Int
@@ -65,18 +65,24 @@ convertY num = round $ ((60 * cellSize) / 2 - num) / cellSize
 handleEvent :: Event -> State -> State
 handleEvent event state
   | EventMotion (x, y) <- event
-  , State (Just ps) ss <- state
-  = State (Just ((convertX x, convertY y):ps)) ss
+  , State (True, Just ps) ss <- state
+  = State (True, Just ((convertX x, convertY y):ps)) ss
 
-  -- Start drawing a new line.
-  | EventKey (MouseButton LeftButton) Down _ pt@(x,y) <- event
-  , State Nothing ss       <- state
-  = State (Just [(convertX x, convertY y)]) []
+  | EventKey (MouseButton LeftButton) Down (Modifiers Down Up Up) pt@(x,y) <- event
+  , State (False, Nothing) ss       <- state
+  = State (True, Just [(convertX x, convertY y)]) $ cutArray [False | x <- [0..59], y <- [0..59]] []
+
+  | EventKey (MouseButton LeftButton) Down (Modifiers Down Up Up) pt@(x,y) <- event
+  , State (_, Just ps) ss       <- state
+  = State (True, Just ((convertX x, convertY y):ps)) ss
+
+  | EventKey (MouseButton LeftButton) Up (Modifiers Down Up Up) pt@(x,y)      <- event
+  , State (True, Just ps) ss    <- state
+  = State (False, Just ((convertX x, convertY y):ps)) $ pathToField state
   
-  -- Finish drawing a line, and add it to the picture.
-  | EventKey (MouseButton LeftButton) Up _ pt@(x,y)      <- event
-  , State (Just ps) ss    <- state
-  = State Nothing $ pathToField state
+  | EventKey (MouseButton LeftButton) Up (Modifiers Up Up Up) pt@(x,y)      <- event
+  , State (_, Just ps) ss    <- state
+  = State (False, Nothing) $ pathToField state
   
   | otherwise
   = state
