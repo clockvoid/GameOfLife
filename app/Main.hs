@@ -20,41 +20,45 @@ type CellState = Bool
 initialState :: [[CellState]]
 initialState = [if mod x 2 == 0 then replicate size False else replicate size True | x <- [0.. size - 1]]
 
-bin :: CellState -> Int
-bin True = 1
-bin False = 0
-
--- nextStep :: [CellState] -> [CellState] -> [CellState] -> [(CellState, Int)]
--- nextStep [] ys zs = [(ys !! x, if x == 0 then ((bin (ys !! (x + 1)) + (bin (zs !! x)) + (bin (zs !! (x + 1))))) else if x == size -1 then ((bin (ys !! (x - 1))) + (bin (zs !! (x - 1))) + (bin (zs !! (x)))) else ((bin (ys !! (x - 1))) + (bin (ys !! (x + 1))) + (bin (zs !! (x - 1))) + (bin (zs !! x)) + (bin (zs !! (x + 1))))) | x <- [0..size - 1]]
--- nextStep xs ys [] = [(ys !! x, if x == 0 then ((bin (ys !! (x + 1))) + (bin (xs !! x)) + (bin (xs !! (x + 1)))) else if x == size -1 then ((bin (ys !! (x - 1))) + (bin (xs !! (x - 1))) + (bin (xs !! (x)))) else ((bin (ys !! (x - 1))) + (bin (ys !! (x + 1))) + (bin (xs !! (x - 1))) + (bin (xs !! x)) + (bin (xs !! (x + 1))))) | x <- [0..size - 1]]
--- nextStep xs ys zs = [(ys !! x, if x == 0 then ((bin (xs !! x)) + (bin (xs !! (x + 1))) + (bin (ys !! (x + 1))) + (bin (zs !! x)) + (bin (zs !! (x + 1)))) else if x == size -1 then ((bin (xs !! (x - 1))) + (bin (xs !! (x))) + (bin (ys !! (x - 1))) + (bin (zs !! (x - 1))) + (bin (zs !! (x)))) else ((bin (xs !! (x - 1))) + (bin (xs !! x)) + (bin (xs !! (x + 1))) + (bin (ys !! (x - 1))) + (bin (ys !! (x + 1))) + (bin (zs !! (x - 1))) + (bin (zs !! x)) + (bin (zs !! (x + 1))))) | x <- [0..size - 1]]
-
-blocks :: [CellState] -> [Int]
-blocks xs = zipWith3 (\x y z -> x + y + z) ys (init (0:ys)) (tail (ys ++ [0]))
-    where ys = map bin xs
-
-lar :: [CellState] -> [(CellState, Int)]
-lar xs = zip xs (zipWith (+) (init (0:ys)) (tail (ys ++ [0])))
-    where ys = map bin xs
-
-addLst :: (CellState, Int) -> Int -> (CellState, Int)
-addLst (x, y) z = (x, y + z)
-
-nextStep :: [CellState] -> [CellState] -> [CellState] -> [(CellState, Int)]
-nextStep [] ys zs = zipWith addLst (lar ys) (blocks zs)
-nextStep xs ys [] = zipWith addLst (lar ys) (blocks xs)
-nextStep xs ys zs = zipWith addLst (lar ys) (zipWith (+) (blocks xs) (blocks zs))
-
-stepCell :: (CellState, Int) -> CellState
-stepCell (False, 3) = True
-stepCell (False, _) = False
-stepCell (True, 2) = True
-stepCell (True, 3) = True
-stepCell (True, _) = False
-
--- 遷移関数
 next :: [[CellState]] -> [[CellState]]
-next prevField = [map stepCell (if x == 0 then nextStep [] (prevField !! x) (prevField !! (x + 1)) else if x == size - 1 then nextStep (prevField !! (x - 1)) (prevField !! x) [] else nextStep (prevField !! (x - 1)) (prevField !! x) (prevField !! (x + 1))) | x <- [0..size - 1]]
+next prevField = nextField
+  where
+    nextField = (map . map) step $ withCoord prevField
+    aroundCell (x, y) = map (getCell prevField) . map (\(dx, dy) -> (x + dx, y + dy)) $ around
+    step ((x, y), s) = rule s $ foldr ((+) . boolToInt) 0 $ aroundCell (x, y)
+
+getCell :: [[CellState]] -> (Int, Int) -> CellState
+getCell field (x, y) = cell
+  where
+    cell =
+      if x < 0 || y < 0 || x > length field - 1 || y > (length . head) field - 1 then
+        False
+      else
+        field !! y !! x
+
+rule :: Bool -> Int -> Bool
+rule s c
+  | s == True = if c == 2 || c == 3 then True else False
+  | otherwise = if c == 3 then True else False
+
+boolToInt :: Bool -> Int
+boolToInt x = if x then 1 else 0
+
+type WithCoord a = ((Int, Int), a)
+
+withCoord :: [[CellState]] -> [[WithCoord CellState]]
+withCoord field = (map (uncurry zip) . zip indicies) field
+  where
+    indicies = [ [ (x, y) | x <- [0..(length . head) field] ] | y <- [0..length field] ]
+
+delta :: [Int]
+delta = [0, -1, 1]
+
+around :: [(Int, Int)]
+around = filter notCenter $ concat $ map (\x -> map ((,) x) delta) delta
+  where
+    notCenter :: (Int, Int) -> Bool
+    notCenter (x, y) = x /= 0 || y /= 0
 
 -- 色付けのルール
 cellStateToColor :: CellState -> Color
