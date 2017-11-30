@@ -35,54 +35,57 @@ nextField next num state
   = state
 
 run :: Int -> Int -> [[Bool]] -> ([[Bool]] -> [[Bool]]) -> (Bool -> Color) -> IO ()
-run size fps initialState next stateToColor = play window bgColor fps (State (False, Nothing) initialState) renderState handleEvent (nextField next)
+run size fps initialState next stateToColor = play window bgColor fps (State (False, Nothing) initialState) renderState (handleEvent s) (nextField next)
   where
     s = (fromInteger . toInteger) size
     window = createWindow s windowName
-    renderState = (render s) . (map . map) stateToColor. pathToField
+    renderState = (render s) . (map . map) stateToColor. (pathToField size)
 
 boolToInt :: Bool -> Color
 boolToInt b = if b then red else white
 
-cutArray :: [a] -> [[a]] -> [[a]]
-cutArray [] xs = xs
-cutArray ys xs = cutArray (drop 60 ys) ((take 60 ys):xs)
+cutArray :: Int -> [a] -> [[a]] -> [[a]]
+cutArray size [] xs = xs
+cutArray size ys xs = cutArray size (drop size ys) ((take size ys):xs)
 
-pathToField :: State -> [[Bool]]
-pathToField state
+xor x y = (x || y) && (not (x && y))
+
+pathToField :: Int -> State -> [[Bool]]
+pathToField size state
   | State (_, Just ps) ss <- state
-  = cutArray (map (flip elem ps) [(x, y) | x <- [0..(60 - 1)], y <- [0..(60 - 1)]]) []
+  = cutArray size (map (flip elem ps) [(x, y) | x <- [0..(size - 1)], y <- [0..(size - 1)]]) []
+  -- (zipWith xor (concat ss) (map (flip elem ps) [(x, y) | x <- [0..(size - 1)], y <- [0..(size - 1)]])) []
 
   | State (_, Nothing) ss <- state
   = ss
 
-convertX :: Float -> Int
-convertX num = round $ ((60 * cellSize) / 2 - num) / cellSize
+convertX :: Float-> Float -> Int
+convertX size num = round $ ((size * cellSize) / 2 - num) / cellSize
 
-convertY :: Float -> Int
-convertY num = round $ ((60 * cellSize) / 2 - num) / cellSize
+convertY :: Float -> Float -> Int
+convertY size num = round $ ((size * cellSize) / 2 - num) / cellSize
 
-handleEvent :: Event -> State -> State
-handleEvent event state
+handleEvent :: Float -> Event -> State -> State
+handleEvent size event state
   | EventMotion (x, y) <- event
   , State (True, Just ps) ss <- state
-  = State (True, Just ((convertX x, convertY y):ps)) ss
+  = State (True, Just ((convertX size x, convertY size y):ps)) ss
 
   | EventKey (MouseButton LeftButton) Down (Modifiers Down Up Up) pt@(x,y) <- event
   , State (False, Nothing) ss       <- state
-  = State (True, Just [(convertX x, convertY y)]) $ cutArray [False | x <- [0..59], y <- [0..59]] []
+  = State (True, Just [(convertX size x, convertY size y)]) $ cutArray (round size) [False | x <- [0..(round size) - 1], y <- [0..(round size) - 1]] []
 
   | EventKey (MouseButton LeftButton) Down (Modifiers Down Up Up) pt@(x,y) <- event
   , State (_, Just ps) ss       <- state
-  = State (True, Just ((convertX x, convertY y):ps)) ss
+  = State (True, Just ((convertX size x, convertY size y):ps)) ss
 
   | EventKey (MouseButton LeftButton) Up (Modifiers Down Up Up) pt@(x,y)      <- event
   , State (True, Just ps) ss    <- state
-  = State (False, Just ((convertX x, convertY y):ps)) $ pathToField state
+  = State (False, Just ((convertX size x, convertY size y):ps)) $ pathToField (round size) state
   
   | EventKey (MouseButton LeftButton) Up (Modifiers Up Up Up) pt@(x,y)      <- event
   , State (_, Just ps) ss    <- state
-  = State (False, Nothing) $ pathToField state
+  = State (False, Nothing) $ pathToField (round size) state
   
   | otherwise
   = state
